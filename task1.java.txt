@@ -1,0 +1,116 @@
+import java.util.ArrayList;
+import java.util.InputMismatchException;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * CodeAlpha – TASK 1 : Student Grade Tracker
+ *
+ * Console program to:
+ *  • capture student names & grades
+ *  • compute average, highest, lowest per student
+ *  • show aggregate class statistics
+ *
+ * Compile : javac StudentGradeTracker.java
+ * Run     : java  StudentGradeTracker
+ */
+public class StudentGradeTracker {
+
+    // ---------- Nested Student class ----------
+    private static class Student {
+        private final String name;
+        private final List<Integer> grades = new ArrayList<>();
+
+        Student(String name) {
+            this.name = name;
+        }
+        void addGrade(int g)             { grades.add(g); }
+        String getName()                 { return name; }
+        List<Integer> getGrades()        { return grades; }
+        int getHighest()                 { return grades.stream().mapToInt(i -> i).max().orElse(0); }
+        int getLowest()                  { return grades.stream().mapToInt(i -> i).min().orElse(0); }
+        double getAverage()              { return grades.stream().mapToInt(i -> i).average().orElse(0.0); }
+    }
+    // ---------- End nested class ----------
+
+    private final List<Student> roster = new ArrayList<>();
+    private final Scanner sc          = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        new StudentGradeTracker().run();
+    }
+
+    private void run() {
+        System.out.println("===== CodeAlpha Student Grade Tracker =====");
+        inputStudents();
+        printReport();
+    }
+
+    // ------------------- Input Section -------------------
+    private void inputStudents() {
+        int studentCount = promptInt("How many students? ");
+        for (int i = 1; i <= studentCount; i++) {
+            System.out.println("\n--- Student " + i + " ---");
+            System.out.print("Name: ");
+            String name = sc.nextLine().trim();
+            Student st  = new Student(name);
+
+            int gradeCount = promptInt("How many grades for " + name + "? ");
+            for (int g = 1; g <= gradeCount; g++) {
+                int score = promptInt("  Enter grade #" + g + " (0‑100): ", 0, 100);
+                st.addGrade(score);
+            }
+            roster.add(st);
+        }
+    }
+
+    private int promptInt(String msg) {
+        return promptInt(msg, Integer.MIN_VALUE, Integer.MAX_VALUE);
+    }
+    private int promptInt(String msg, int min, int max) {
+        while (true) {
+            System.out.print(msg);
+            try {
+                int val = Integer.parseInt(sc.nextLine().trim());
+                if (val < min || val > max)
+                    throw new NumberFormatException();
+                return val;
+            } catch (NumberFormatException | InputMismatchException e) {
+                System.out.println("  ⚠️  Please enter a valid integer"
+                                   + (min != Integer.MIN_VALUE ? " between " + min + " and " + max : "") + ".");
+            }
+        }
+    }
+
+    // ------------------- Report Section -------------------
+    private void printReport() {
+        System.out.println("\n========== SUMMARY REPORT ==========");
+        double classTotal = 0;
+        int    gradeItems = 0;
+        int    classHigh  = Integer.MIN_VALUE;
+        int    classLow   = Integer.MAX_VALUE;
+
+        for (Student st : roster) {
+            int    high = st.getHighest();
+            int    low  = st.getLowest();
+            double avg  = st.getAverage();
+
+            // Update class aggregates
+            classHigh  = Math.max(classHigh, high);
+            classLow   = Math.min(classLow,  low);
+            classTotal += st.getGrades().stream().mapToInt(i -> i).sum();
+            gradeItems += st.getGrades().size();
+
+            // Per‑student line
+            System.out.printf("%-15s  Avg: %6.2f  High: %3d  Low: %3d  Grades: %s%n",
+                              st.getName(), avg, high, low, st.getGrades());
+        }
+
+        // ----- Class‑level stats -----
+        double classAvg = gradeItems > 0 ? classTotal / gradeItems : 0;
+        System.out.println("------------------------------------");
+        System.out.printf("Class Average: %.2f | Highest Score: %d | Lowest Score: %d%n",
+                          classAvg, classHigh, classLow);
+        System.out.println("====================================");
+    }
+}
